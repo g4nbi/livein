@@ -1,0 +1,86 @@
+name: Build Livein Unsigned IPA
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+
+      - name: List schemes
+        run: xcodebuild -project Livein.xcodeproj -list
+
+      - name: Build Release
+        shell: bash
+        run: |
+          set -o pipefail
+
+          xcodebuild \
+            -project Livein.xcodeproj \
+            -scheme Livein \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build \
+            2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Create unsigned IPA
+        shell: bash
+        run: |
+          APP_PATH="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/Livein.app"
+
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Livein.app tidak ditemukan"
+            find "$RUNNER_TEMP/DerivedData" -type d -name "*.app" -print
+            exit 1
+          fi
+
+          rm -rf "$RUNNER_TEMP/ipa"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+
+          cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/Livein.app"
+
+          cd "$RUNNER_TEMP/ipa"
+          zip -qry "$GITHUB_WORKSPACE/Livein-unsigned.ipa" Payload
+
+          test -f "$GITHUB_WORKSPACE/Livein-unsigned.ipa"
+          ls -lh "$GITHUB_WORKSPACE/Livein-unsigned.ipa"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Livein-unsigned-ipa
+          path: Livein-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Livein-build-log
+          path: ${{ runner.temp }}/build.log
+          if-no-files-found: ignore
+          retention-days: 7
