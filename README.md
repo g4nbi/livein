@@ -71,23 +71,6 @@ enum Secrets {
 
 ---
 
-## Cara Upload ke GitHub
-
-```bash
-cd livein   # direktori root repository
-
-git init
-git add .
-git commit -m "Initial commit: Livein iOS app"
-
-# Buat repository di GitHub, lalu:
-git remote add origin https://github.com/g4nbi/livein.git
-git branch -M main
-git push -u origin main
-```
-
----
-
 ## Cara Menjalankan GitHub Actions
 
 1. Push ke branch `main` — Actions otomatis berjalan
