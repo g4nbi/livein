@@ -1,6 +1,6 @@
 # Livein
 
-Aplikasi iOS native untuk livestream IRL (In Real Life) menggunakan RTMPS.
+Aplikasi iOS native untuk livestream menggunakan RTMPS.
 
 > **Dibuat dengan:** Swift, SwiftUI, AVFoundation, VideoToolbox — tanpa Flutter, React Native, atau dependency berat.
 
